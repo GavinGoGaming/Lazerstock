@@ -1,9 +1,13 @@
 "use client";
 import { Button } from "@mui/joy";
 import { Chess } from "chess.js";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
+import { Alert, Game, GameStyle } from "./page";
+import ChessAPI from "./apis/API";
+import CAChessApi from "./apis/APIChessApi";
+import CAStockfishOnline from "./apis/APIStockfishOnline";
 
-const icons = {
+export const icons = {
     'p': 'fa-chess-pawn',
     'r': 'fa-chess-rook',
     'n': 'fa-chess-knight',
@@ -11,7 +15,7 @@ const icons = {
     'q': 'fa-chess-queen',
     'k': 'fa-chess-king'
 };
-const elo = {
+export const elo = {
     '300': 1,
     '500': 2,
     '750': 3,
@@ -23,7 +27,7 @@ const elo = {
     '2750': 18
 }; 
 
-function Square({ piece, position, movePiece }: { piece: any, position: string, movePiece: (from: string, to: string) => void }) {
+function Square({ piece, position, movePiece, style }: { piece: any, style: GameStyle, position: string, movePiece: (from: string, to: string) => void }) {
     const handleDragStart = (e: React.DragEvent) => {
         e.dataTransfer.setData("from", position);
     };
@@ -43,64 +47,123 @@ function Square({ piece, position, movePiece }: { piece: any, position: string, 
             onDragOver={handleDragOver}
             className="chessboard-square"
             style={{
-                backgroundColor: (parseInt(position[1]) + position.charCodeAt(0)) % 2 === 0 ? '#e8e9cf' : '#739552',
+                backgroundColor: (parseInt(position[1]) + position.charCodeAt(0)) % 2 === 0 ? style.tiles.light : style.tiles.dark,
             }}
         >
-            {piece?.type && (
-                <i
-                    draggable
-                    onDragStart={handleDragStart}
-                    className={`fa-solid ${icons[piece.type as keyof typeof icons]} chess-piece`}
-                    style={{
-                        color: piece.color === 'b' ? 'black' : 'white',
-                        '--effect-color': piece.color === 'b' ? '#ccc' : '#333',
-                    } as CSSProperties}
-                ></i>
-            )}
+            {piece?.type && <>
+                {style.piece(piece.color, piece.type, handleDragStart)}
+            </>}
         </div>
     );
 }
 
-export default function Chessboard({ game }: { game: Chess }) {
-    const [chess] = useState(game);
-    const [, setBoard] = useState(chess.board());
+export default function Chessboard({ game, setAlert, style }: { game: Game, setAlert: (_:Alert)=>void, style: GameStyle }) {
+    const [chess] = useState(game.chess);
+    const [isBlack] = useState(game.black);
+    const [autoplay] = useState(game.autoplay);
+    const [b, setBoard] = useState(chess.board());
     const [eloLevel, setEloLevel] = useState<keyof typeof elo>("2350");
+    
+    const [api, setApi] = useState<ChessAPI|null>(null);
+
+    function moveStockfish({forceDepth=null}: {forceDepth?: number|null} = {}) {
+        if(api) {
+            api.getMove(chess.fen(), forceDepth || elo[eloLevel]).then((result: { from: string; to: string; move: string }|string) => {
+                if (typeof result === 'string') {
+                    setAlert({
+                        message: result,
+                        color: "#f00",
+                        icon: "fa-solid fa-exclamation-triangle",
+                    });
+                    return;
+                }
+                const { from, to, move } = result;
+                chess.move(move);
+                setBoard([...chess.board()]);
+                setAlert({
+                    message: `Stockfish moved ${from} > ${to}`,
+                    color: "#ddd",
+                    icon: "fa-chess",
+                });
+            });
+        }
+    }
 
     const movePiece = (from: string, to: string) => {
+        if(from === to || chess.isGameOver()) return;
         try {
             const move = chess.move({ from, to, promotion: 'q' });
             if (move) {
                 setBoard([...chess.board()]);
+                setAlert({
+                    message: `You moved ${from} > ${to}`,
+                    color: "#ddd",
+                    icon: "fa-chess",
+                });
             }
-            fetch("https://chess-api.com/v1", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    fen: chess.fen(),
-                    depth: elo[eloLevel],
-                    elo: eloLevel,
-                }),
-            }).then((res) => res.json()).then((data) => {
-                chess.move(data.move);
-                setBoard([...chess.board()]);
-            })
+            moveStockfish();
         } catch(err) {
-            console.error("Invalid move", err);
+            console.log("Invalid move", err);
+            setAlert({
+                message: "Invalid move",
+                color: "#f00",
+                icon: "fa-solid fa-exclamation-triangle",
+            });
         }
     };
+
+    useEffect(() => {
+        if(game.ai) {
+            if(game.ai.model === 'stockfish-online') {
+                setApi(new CAStockfishOnline());
+            } else if(game.ai.model === 'chess-api') {
+                setApi(new CAChessApi());
+            }
+        }
+        if (isBlack || autoplay) {
+            moveStockfish();
+        }
+    },[]);
+
+    useEffect(() => {
+        var message = '';
+        if (chess.isCheck()) {
+            message = 'Check!';
+        }
+        if (chess.isCheckmate()) {
+            message = 'Checkmate!';
+        }
+        if (chess.isStalemate()) {
+            message = 'Stalemate!';
+        }
+        if (chess.isDraw()) {
+            message = 'Draw!';
+        }
+        if(chess.isGameOver()) {
+            message += ' - Game Over'
+        }
+        if (message) {
+            setAlert({
+                message,
+                color: "#f00",
+                icon: "fa-solid fa-exclamation-triangle",
+            });
+        }
+    }, [chess.board, b]);
 
     return (
         <div className="chesssplit">
             <div className="chessboard">
-                {chess.board().map((row, rowIndex) => {
+                {(isBlack ? [...chess.board()].reverse() : chess.board()).map((row, rowIndex) => {
                     return (
                         <div key={rowIndex} className="chessboard-row">
-                            {row.map((piece, colIndex) => {
-                                const position = `${String.fromCharCode(97 + colIndex)}${8 - rowIndex}`;
+                            {(isBlack ? [...row].reverse() : row).map((piece, colIndex) => {
+                                const position = isBlack
+                                    ? `${String.fromCharCode(104 - colIndex)}${rowIndex + 1}`
+                                    : `${String.fromCharCode(97 + colIndex)}${8 - rowIndex}`;
                                 return (
                                     <Square
+                                        style={style}
                                         key={position}
                                         piece={piece}
                                         position={position}
@@ -112,17 +175,19 @@ export default function Chessboard({ game }: { game: Chess }) {
                     );
                 })}
             </div>
-            <div className="chess-options">
-                <Button onClick={()=>{setEloLevel("300")}} color={eloLevel === '300' ? 'success' : 'primary'}>300</Button>
-                <Button onClick={()=>{setEloLevel("500")}} color={eloLevel === '500' ? 'success' : 'primary'}>500</Button>
-                <Button onClick={()=>{setEloLevel("750")}} color={eloLevel === '750' ? 'success' : 'primary'}>750</Button>
-                <Button onClick={()=>{setEloLevel("1000")}} color={eloLevel === '1000' ? 'success' : 'primary'}>1000</Button>
-                <Button onClick={()=>{setEloLevel("1200")}} color={eloLevel === '1200' ? 'success' : 'primary'}>1200</Button>
-                <Button onClick={()=>{setEloLevel("1500")}} color={eloLevel === '1500' ? 'success' : 'primary'}>1500</Button>
-                <Button onClick={()=>{setEloLevel("2000")}} color={eloLevel === '2000' ? 'success' : 'primary'}>2000</Button>
-                <Button onClick={()=>{setEloLevel("2350")}} color={eloLevel === '2350' ? 'success' : 'primary'}>2350</Button>
-                <Button onClick={()=>{setEloLevel("2750")}} color={eloLevel === '2750' ? 'success' : 'primary'}>2750</Button>
-            </div>
+            {(game.ai) && (
+                <div className="chess-options">
+                    <Button onClick={()=>{setEloLevel("300")}} color={eloLevel === '300' ? 'success' : 'primary'}>300</Button>
+                    <Button onClick={()=>{setEloLevel("500")}} color={eloLevel === '500' ? 'success' : 'primary'}>500</Button>
+                    <Button onClick={()=>{setEloLevel("750")}} color={eloLevel === '750' ? 'success' : 'primary'}>750</Button>
+                    <Button onClick={()=>{setEloLevel("1000")}} color={eloLevel === '1000' ? 'success' : 'primary'}>1000</Button>
+                    <Button onClick={()=>{setEloLevel("1200")}} color={eloLevel === '1200' ? 'success' : 'primary'}>1200</Button>
+                    <Button onClick={()=>{setEloLevel("1500")}} color={eloLevel === '1500' ? 'success' : 'primary'}>1500</Button>
+                    <Button onClick={()=>{setEloLevel("2000")}} color={eloLevel === '2000' ? 'success' : 'primary'}>2000</Button>
+                    <Button onClick={()=>{setEloLevel("2350")}} color={eloLevel === '2350' ? 'success' : 'primary'}>2350</Button>
+                    <Button onClick={()=>{setEloLevel("2750")}} disabled={game.ai.model==='stockfish-online'} color={eloLevel === '2750' ? 'success' : 'primary'}>2750</Button>
+                </div>
+            )}
         </div>
     );
 }
