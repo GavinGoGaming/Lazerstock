@@ -1,39 +1,12 @@
 "use client";
 import Image from "next/image";
 import { Chess } from "chess.js";
-import Chessboard, { elo, icons } from "./chess";
+import Chessboard, { Alert, elo, Game, icons } from "./chess";
 import { ReactNode, useState } from "react";
 import { CssVarsProvider, Modal, ModalClose, ModalDialog, Select, Option, Typography, Slider, Button, Switch } from "@mui/joy";
 import AIvsAIModal from "./modals/aivai";
 import BasicModal from "./modals/basic";
 
-export interface Alert {
-    message: string;
-    color: string;
-    icon?: string;
-};
-
-export interface GameStyle {
-    tiles: {
-        light: string;
-        dark: string;
-    },
-    piece: (color: string, piece: keyof typeof icons, handleDragStart?: any) => ReactNode;
-}
-export const AIModels = ['chess-api', 'stockfish-online'];
-export type AIModel = typeof AIModels[number];
-export interface Game {
-    chess: Chess;
-    black: boolean;
-    autoplay: {
-        depthA: number;
-        depthB: number;
-        delay: number;
-    } | null;
-    ai?: {
-        model: AIModel;
-    };
-}
 
 export const defaultStyles = {
     basic: {

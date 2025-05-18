@@ -1,8 +1,7 @@
 "use client";
 import { Button } from "@mui/joy";
 import { Chess } from "chess.js";
-import { CSSProperties, useEffect, useState } from "react";
-import { Alert, Game, GameStyle } from "./page";
+import { CSSProperties, ReactNode, useEffect, useState } from "react";
 import ChessAPI from "./apis/API";
 import CAChessApi from "./apis/APIChessApi";
 import CAStockfishOnline from "./apis/APIStockfishOnline";
@@ -26,6 +25,33 @@ export const elo = {
     '2350': 12,
     '2750': 18
 }; 
+export interface Alert {
+    message: string;
+    color: string;
+    icon?: string;
+};
+
+export interface GameStyle {
+    tiles: {
+        light: string;
+        dark: string;
+    },
+    piece: (color: string, piece: keyof typeof icons, handleDragStart?: any) => ReactNode;
+}
+export const AIModels = ['chess-api', 'stockfish-online'];
+export type AIModel = typeof AIModels[number];
+export interface Game {
+    chess: Chess;
+    black: boolean;
+    autoplay: {
+        depthA: number;
+        depthB: number;
+        delay: number;
+    } | null;
+    ai?: {
+        model: AIModel;
+    };
+}
 
 function Square({ piece, position, movePiece, style }: { piece: any, style: GameStyle, position: string, movePiece: (from: string, to: string) => void }) {
     const handleDragStart = (e: React.DragEvent) => {

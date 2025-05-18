@@ -1,7 +1,7 @@
 import { Modal, ModalDialog, ModalClose, Typography, Select, Option, Button, Input, FormHelperText, FormControl } from "@mui/joy";
 import { Chess } from "chess.js";
 import { useState } from "react";
-import { AIModel, AIModels } from "../page";
+import { AIModel, AIModels } from "../chess";
 
 export default function BasicModal({
     showBasicGame,
