@@ -38,6 +38,27 @@ export interface GameStyle {
     },
     piece: (color: string, piece: keyof typeof icons, handleDragStart?: any) => ReactNode;
 }
+export const defaultStyles: Record<string, GameStyle> = {
+    'basic': {
+        tiles: {
+            light: "#e8e9cf",
+            dark: "#769656",
+        },
+        piece(color: string, piece: keyof typeof icons, handleDragStart?: any) {
+            return (
+                <i
+                    draggable
+                    onDragStart={handleDragStart}
+                    className={`fa-solid ${icons[piece]} chess-piece`}
+                    style={{
+                        color: color === 'w' ? '#fff' : '#000',
+                        filter: `drop-shadow(0 0 5px #${color === 'w' ? '000' : 'fff'})`,
+                    }}
+                ></i>
+            )
+        }
+    }
+}
 export const AIModels = ['chess-api', 'stockfish-online'];
 export type AIModel = typeof AIModels[number];
 export interface Game {
