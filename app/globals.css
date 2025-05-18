@@ -10,10 +10,25 @@ html, body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+main {
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.2rem;
+  background: #111;
+  border-bottom: 1px solid #333;
 }
 .klash-legacy {
   font-family: "KlashLegacy";
@@ -42,16 +57,40 @@ html, body {
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
+  position: relative;
+}
+.square-label {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 0.5rem;
+  color: #eee;
+}
+.chessboard-square.light .square-label {
+  color: #7e7e7e;
 }
 .chess-piece {
   font-size: 2rem;
 }
+.chessboard:not(.view) .chess-piece {
+  cursor: grab;
+}
+.chessboard:not(.view) .chess-piece:active {
+  cursor: grabbing;
+}
+img.chess-piece {
+  width: 2.75rem;
+  height: 2.75rem;
+}
 .chessboard {
   display: flex;
   flex-direction: column;
+  user-select: none;
   border: 1px solid #333;
   width: fit-content;
   height: fit-content;
+}
+.chessboard:not(.view) {
   margin: 1rem auto;
 }
 .chesssplit {
@@ -78,6 +117,13 @@ html, body {
   gap: 0.5rem;
   margin: 0.5rem 0;
 }
+.chess-piece-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
 .game {
   display: flex;
   flex-direction: column;
@@ -89,11 +135,11 @@ html, body {
   cursor: pointer;
   user-select: none;
 }
-.game img {
+.game img, .game .view {
   width: 10rem;
   height: 10rem;
 }
-.game span {
+.game span, .theme span {
   width: 100%;
   height: 2rem;
   display: flex;
@@ -101,7 +147,24 @@ html, body {
   align-items: center;
   font-size: 1rem;
 }
+.theme span {
+  background: #1d1d25;
+  color: #eee;
+}
+.theme span:hover {
+  background: #334;
+}
 .game:hover {
   filter: grayscale(0);
   background: #444;
+}
+.theme {
+  cursor: pointer;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+.theme.active {
+  border: 2px solid #f90;
 }

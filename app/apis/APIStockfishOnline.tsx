@@ -71,7 +71,7 @@ export default class CAStockfishOnline extends ChessAPI {
         if (depth < 1) depth = 1;
         if (depth > 16) depth = 16;
         return new Promise((resolve, reject) => {
-            fetch(`https://stockfish.online/api/s/v2.php?fen=${fen}&depth=${depth}`, {
+            fetch(`https://corsproxy.gavingogaming.workers.dev/?api=${encodeURIComponent(`https://stockfish.online/api/s/v2.php?fen=${fen}&depth=${depth}`)}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

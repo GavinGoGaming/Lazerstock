@@ -1,8 +1,10 @@
 import { Modal, ModalDialog, ModalClose, Typography, Select, Option, Button, Input, FormHelperText, FormControl } from "@mui/joy";
 import { Chess } from "chess.js";
 import { useState } from "react";
-import { AIModel, AIModels } from "../chess";
-
+import { AIModel, AIModels, Game } from "../chess";
+export function capitalizeWords(str: string) {
+    return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
 export default function BasicModal({
     showBasicGame,
     setShowBasicGame,
@@ -10,23 +12,22 @@ export default function BasicModal({
     setAlert,
     black
 }: any) {
-    const [ai, setAI] = useState<AIModel | null>('stockfish-online');
+    const [ai, setAI] = useState<AIModel | null>(null);
     const [customFEN, setCustomFEN] = useState<string | undefined>();
     const [fenInvalid, setFENInvalid] = useState("");
-    function capitalizeWords(str: string) {
-        return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
     function startGame() {
         try {
             const chess = new Chess(customFEN);
-            setGame({
+            const game: Game = {
                 chess,
                 black: black,
                 autoplay: null,
-                ai: ((ai != null && ai != undefined)) ? {
+                ai: (ai) ? {
                     model: ai
                 } : undefined,
-            });
+            };
+            setGame(game);
+            console.log(game)
             setAlert({
                 message: "New game started",
                 color: "#ddd",
